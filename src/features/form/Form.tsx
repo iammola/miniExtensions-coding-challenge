@@ -1,9 +1,9 @@
-import { useSelector, useDispatch } from 'react-redux';
-import React, { FunctionComponent, FormEvent, ChangeEvent } from 'react';
+import { useSelector, useDispatch } from "react-redux";
+import React, { FunctionComponent, FormEvent } from "react";
 
-import { FormProps } from 'types';
+import { FormProps } from "types";
 
-import { selectValue, setValue } from './formSlice';
+import { selectValue, setValue } from "./formSlice";
 
 const Form: FunctionComponent<FormProps> = ({ onSubmit, error }) => {
   const value = useSelector(selectValue);
@@ -11,7 +11,7 @@ const Form: FunctionComponent<FormProps> = ({ onSubmit, error }) => {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
-    dispatch(setValue(''));
+    dispatch(setValue(""));
     onSubmit(value.trim());
   }
 
