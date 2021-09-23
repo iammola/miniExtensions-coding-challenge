@@ -1,103 +1,99 @@
-import Airtable from 'airtable';
-import { useSelector, useDispatch } from 'react-redux';
-import React, { FunctionComponent, Fragment, useEffect } from 'react';
-
-import {
-  selectData,
-  selectError,
-  selectLoading,
-  selectLoggedIn,
-  selectUser,
-  setData,
-  setLoading,
-  setLoggedIn,
-  setUser,
-  setError
-} from './appSlice';
+import Airtable from "airtable";
+import { useSelector, useDispatch } from "react-redux";
+import React, { FunctionComponent, Fragment, useEffect, useCallback } from "react";
 
 import Form from "../form/Form";
 import Classes from "../classes/Classes";
+import { selectData, selectError, selectLoading, selectLoggedIn, selectUser, setData, setLoading, setLoggedIn, setUser, setError } from "./appSlice";
 
-import { AppProps, AppState } from 'types';
+import { AppProps, AppState } from "types";
 
-const base = new Airtable({ apiKey: process.env.APIKEY }).base('app8ZbcPx7dkpOnP0');
+const base = new Airtable({ apiKey: "" }).base("app8ZbcPx7dkpOnP0");
 
 const App: FunctionComponent<AppProps> = () => {
-  const loading = useSelector(selectLoading);
-  const loggedIn = useSelector(selectLoggedIn);
+  const dispatch = useDispatch();
+  const data = useSelector(selectData);
   const user = useSelector(selectUser);
   const error = useSelector(selectError);
-  const data = useSelector(selectData);
-  const dispatch = useDispatch();
+  const loading = useSelector(selectLoading);
+  const loggedIn = useSelector(selectLoggedIn);
+
+  const generateIDFormula = (data: string[] = []) => `OR(${data.map((id) => `RECORD_ID()="${id}"`)})`;
+
+  const logout = useCallback(() => {
+    dispatch(setUser(""));
+    dispatch(setData({}));
+    dispatch(setLoggedIn(false));
+  }, [dispatch]);
 
   useEffect(() => {
-    if (user !== '') getResults();
-  }, [user]);
+    function reportError(err: any, message?: string) {
+      console.error(err);
+      dispatch(setError(message ?? err));
+      logout();
+    }
 
-  function getLinkedRecord(table: string, id: string) {
-    return base(table).find(id);
-  }
-
-  async function getResults() {
-    dispatch(setLoading(true));
-    dispatch(setError(''));
-
-    base('Students').select({
-      maxRecords: 1,
-      view: 'Grid view',
-      filterByFormula: `({Name}="${user}")`
-    }).firstPage(async (err, records) => {
-      if (err && (records === undefined || records === null)) {
-        console.error(err);
-        dispatch(setError('Could not fetch results !!!'));
-      }
-
-      if (records !== undefined && records !== null) {
-        if (records.length < 1) {
-          dispatch(setError(`Student "${user}" does not exist !!!`));
-          dispatch(setUser(""));
-        } else {
-          const data = await ((records[0]?.get('Classes') as string[] ?? [])).reduce(async (acc, item) => {
-              const record = await getLinkedRecord('Classes', item);
-              const Students = await Promise.all(((record?.get('Students') as string[]) ?? []).map(async (item) => (await getLinkedRecord('Students', item)).get('Name')));
-              
-              return Object.assign(await acc, {
-                [item]: {
-                  Name: record.get('Name'),
-                  Students: Students.length > 1 ? Students : ["No Linked Students"]
-                }
+    async function getResults() {
+      dispatch(setLoading(true));
+      dispatch(setError(""));
+  
+      base("Students").select({
+        maxRecords: 1,
+        view: "Grid view",
+        filterByFormula: `({Name}="${user}")`
+      }).firstPage(async (err, records = []) => {
+        if (err) reportError(err, "Could not get student !!!");
+        else if (records.length < 1) reportError(`Student "${user}" does not exist !!!`);
+        else {
+          const data: AppState['data'] = {};
+          await base("Classes").select({
+            filterByFormula: generateIDFormula(records[0].get("Classes") as string[])
+          }).eachPage(async (classes, next) => {
+            await Promise.all(classes.map(async function (classRecord) {
+              const Name = classRecord.get("Name") as string;
+              const Students: string[] = [];
+  
+              await base("Students").select({
+                filterByFormula: generateIDFormula(classRecord.get("Students") as string[])
+              }).eachPage((students, next) => {
+                Students.push(...students.map((student) => student.get("Name") as string));
+                next();
               });
-          }, {} as Promise<AppState['data']>);
-    
+              
+              data[Name] = { Name, Students };
+            }));
+            next();
+          });
+  
           dispatch(setData(data));
           dispatch(setLoggedIn(true));
         }
-      }
-      
-      dispatch(setLoading(false));
-    });
-  }
+  
+        dispatch(setLoading(false));
+      });
+    }
 
-  function logout() {
-    dispatch(setUser(''));
-    dispatch(setData({}));
-    dispatch(setLoggedIn(false));
-  }
+    if (user !== "") getResults();
+  }, [user, dispatch, logout]);
 
   return (
     <Fragment>
       {loading === true ? (
-        <span className="loading">Loading...</span>
-      ) : loggedIn === false ? (
-        <Form
-          onSubmit={(user: string) => dispatch(setUser(user))}
-          error={error}
-        />
+        <span className="loading">
+          Loading...
+        </span>
       ) : (
-        <Classes
-          data={data}
-          handleLogout={logout}
-        />
+        loggedIn === false ? (
+          <Form
+            error={error}
+            onSubmit={user => dispatch(setUser(user))}
+          />
+        ) : (
+          <Classes
+            data={data}
+            handleLogout={logout}
+          />
+        )
       )}
     </Fragment>
   );
