@@ -5,7 +5,8 @@ import { setValue } from "./slice";
 export const Form: React.FC<{ login(user: string, cb: () => void): void }> = ({ login }) => {
   const dispatch = useDispatch();
   const value = useSelector((state: Types.State) => state.form.value);
-  const loading = useSelector((state: Types.State) => state.app.user && !state.app.isLoggedIn);
+  const message = useSelector((state: Types.State) => state.app.message);
+  const loading = useSelector((state: Types.State) => !message && state.app.user && !state.app.isLoggedIn);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,7 +36,9 @@ export const Form: React.FC<{ login(user: string, cb: () => void): void }> = ({ 
           Log In
         </button>
       </div>
-      {loading && <span className="my-1 text-gray-700">Loading...</span>}
+      {(message || loading) && (
+        <span className="my-1 text-sm font-semibold tracking-wide text-gray-700">{message || "Loading..."}</span>
+      )}
     </form>
   );
 };

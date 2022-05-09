@@ -5,7 +5,8 @@ declare global {
     interface State {
       form: Record<"value", string>;
       app: {
-        user: string;
+        user?: string;
+        message?: string;
         isLoggedIn: boolean;
         classes?: {
           name: string;
