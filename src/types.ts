@@ -7,6 +7,10 @@ declare global {
       app: {
         user: string;
         isLoggedIn: boolean;
+        classes?: {
+          name: string;
+          students: string[];
+        }[];
       };
     }
   }

@@ -1,11 +1,17 @@
 import Airtable from "airtable";
 import { useDispatch } from "react-redux";
 
-import { setUser, setIsLoggedIn } from "features";
+import { setClasses, setUser, setIsLoggedIn } from "features";
 
 const base = new Airtable({ apiKey: process.env.REACT_APP_AIRTABLE_API_KEY }).base("app8ZbcPx7dkpOnP0");
 const App: React.FC = () => {
   const dispatch = useDispatch();
+
+  function logout() {
+    dispatch(setUser(""));
+    dispatch(setIsLoggedIn(false));
+    dispatch(setClasses(undefined));
+  }
 
   async function login(user: string) {
     dispatch(setUser(user));
@@ -25,14 +31,17 @@ const App: React.FC = () => {
       .select({ filterByFormula: `OR(${classes.map((cl) => `SEARCH("${cl.get("Name")}", {Classes})`)})` })
       .all();
 
-    const data = classes.map((item) => ({
-      name: item.get("Name") as string,
-      students: (item.get("Students") as string[]).map((student) =>
-        mates.find((mate) => mate.id === student)?.get("Name")
-      ) as string[],
-    }));
-
     dispatch(setIsLoggedIn(true));
+    dispatch(
+      setClasses(
+        classes.map((item) => ({
+          name: item.get("Name") as string,
+          students: (item.get("Students") as string[]).map((student) =>
+            mates.find((mate) => mate.id === student)?.get("Name")
+          ) as string[],
+        }))
+      )
+    );
   }
 
   return <></>;
