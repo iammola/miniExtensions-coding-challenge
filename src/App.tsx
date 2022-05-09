@@ -29,7 +29,12 @@ const App: React.FC = () => {
       .all();
 
     const mates = await base("Students")
-      .select({ filterByFormula: `OR(${classes.map((cl) => `SEARCH("${cl.get("Name")}", {Classes})`)})` })
+      .select({
+        filterByFormula: `AND(
+          OR(${classes.map((cl) => `SEARCH("${cl.get("Name")}", {Classes})`)}),
+          NOT(RECORD_ID()="${student.id}")
+        )`,
+      })
       .all();
 
     dispatch(setIsLoggedIn(true));
@@ -39,7 +44,7 @@ const App: React.FC = () => {
           name: item.get("Name") as string,
           students: (item.get("Students") as string[]).map((student) =>
             mates.find((mate) => mate.id === student)?.get("Name")
-          ) as string[],
+          ).filter(Boolean) as string[],
         }))
       )
     );
