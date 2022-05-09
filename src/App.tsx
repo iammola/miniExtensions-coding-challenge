@@ -1,11 +1,12 @@
 import Airtable from "airtable";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import { setClasses, setUser, setIsLoggedIn } from "features";
+import { Data, Form, setClasses, setUser, setIsLoggedIn } from "features";
 
 const base = new Airtable({ apiKey: process.env.REACT_APP_AIRTABLE_API_KEY }).base("app8ZbcPx7dkpOnP0");
 const App: React.FC = () => {
   const dispatch = useDispatch();
+  const isLoggedIn = useSelector((state: Types.State) => state.app.isLoggedIn);
 
   function logout() {
     dispatch(setUser(""));
@@ -44,7 +45,7 @@ const App: React.FC = () => {
     );
   }
 
-  return <></>;
+  return isLoggedIn ? <Data logout={logout} /> : <Form login={login} />;
 };
 
 export default App;
