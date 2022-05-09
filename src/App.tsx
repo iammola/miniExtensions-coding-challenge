@@ -14,7 +14,7 @@ const App: React.FC = () => {
     dispatch(setClasses(undefined));
   }
 
-  async function login(user: string) {
+  async function login(user: string, cb: () => void) {
     dispatch(setUser(user));
     dispatch(setIsLoggedIn(false));
 
@@ -43,6 +43,7 @@ const App: React.FC = () => {
         }))
       )
     );
+    cb();
   }
 
   return isLoggedIn ? <Data logout={logout} /> : <Form login={login} />;

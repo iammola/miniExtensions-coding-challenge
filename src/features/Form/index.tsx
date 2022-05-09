@@ -2,14 +2,14 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { setValue } from "./slice";
 
-export const Form: React.FC<{ login(user: string): void }> = ({ login }) => {
+export const Form: React.FC<{ login(user: string, cb: () => void): void }> = ({ login }) => {
   const dispatch = useDispatch();
   const value = useSelector((state: Types.State) => state.form.value);
   const loading = useSelector((state: Types.State) => state.app.user && !state.app.isLoggedIn);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    login(value);
+    login(value, () => dispatch(setValue("")));
   }
 
   return (
