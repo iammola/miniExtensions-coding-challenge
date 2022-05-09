@@ -1,3 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-export const store = configureStore({ reducer: {} });
+import { formReducer, appReducer } from "features";
+
+export const store = configureStore({
+  reducer: {
+    app: appReducer,
+    form: formReducer,
+  },
+});
